@@ -1,753 +1,473 @@
-Practical No. 2B:
-Aim: Create and use your own corpora (plaintext, categorical)
-Code:
-import nltk
-nltk.download('punkt')
-from nltk.corpus import PlaintextCorpusReader
-corpus_root = 'NLP/Practical'
-filelist = PlaintextCorpusReader(corpus_root, '.*\.py')
-print('\nFile list: \n')
-print(filelist.fileids())
-print(filelist.root)
-print('\nStatistics for each text:\n')
-print("AvgWordLen\tAvgSentenceLen\tNo.OfTimesEachWordAppearsOnAvg\t\tFileName"
-)
-for fileid in filelist.fileids():
-num_chars = len(filelist.raw(fileid))
-num_words = len(filelist.words(fileid))
-num_sents = len(filelist.sents(fileid))
-num_vocab = len(set([w.lower() for w in filelist.words(fileid)]))
-print(int(num_chars/num_words), '\t\t\t', int(num_words/num_sents), 
-'\t\t\t', int(num_words/num_vocab), '\t\t\t', fileid)
-
-
-Practical No. 2C:
-Aim: Study Conditional frequency distributions.
-Code:
-import nltk
-from nltk.corpus import brown
-fd = nltk.ConditionalFreqDist(
-(genre, word)
-for genre in brown.categories()
-for word in brown.words(categories=genre)
-)
-genre_word = [(genre, word)
-for genre in ['news', 'romance']
-for word in brown.words(categories=genre)
-]
-print(len(genre_word))
-print(genre_word[:4])
-print(genre_word[-4:])
-cfd = nltk.ConditionalFreqDist(genre_word)
-print(cfd)
-print(cfd.conditions())
-print(cfd['news'])
-print(cfd['romance'])
-print(list(cfd['romance']))
-from nltk.corpus import inaugural
-cfd = nltk.ConditionalFreqDist(
-(target, fileid[:4])
-for fileid in inaugural.fileids()
-for w in inaugural.words(fileid)
-for target in ['america', 'citizen']
-if w.lower().startswith(target)
-)
-from nltk.corpus import udhr
-languages = ['Chickasaw', 'English', 'German_Deutsch', 
-'Greenlandic_Inuktikut', 'Hungarian_Magyar', 'Ibibio_Efik']
-cfd = nltk.ConditionalFreqDist(
-(lang, len(word))
-for lang in languages
-for word in udhr.words(lang + '-Latin1')
-)
-cfd.tabulate(conditions=['English', 'German_Deutsch'], samples=range(10), 
-cumulative=True)
-
-
-Practical No. 2D:
-Aim: Study of tagged corpora with methods like tagged_sents,
-tagged_words.
-Code:
-import nltk
-nltk.download('treebank')
-from nltk.corpus import treebank
-tagged_sentences = treebank.tagged_sents()
-print("Tagged Sentences: ")
-for tagged_sent in tagged_sentences[:2]:
-print("\n", tagged_sent)
-print("\n\n")
-tagged_wrds = treebank.tagged_words()[:10]
-print("Tagged Words: ")
-for tagged_word in tagged_wrds:
-print(tagged_word)
-
-
-Practical No. 2E:
-Aim: Write a program to find the most frequent noun tags.
-Code:
-import nltk
-nltk.download('averaged_perceptron_tagger')
-from collections import defaultdict
-text = nltk.word_tokenize("Nick likes to play football. Nick does not like to 
-play cricket.")
-tagged = nltk.pos_tag(text)
-print(tagged)
-addNounWords = []
-count = 0
-for words in tagged:
-val = tagged[count][1]
-if(val == "NN" or val == "NNS" or val == "NNPS" or val == "NNP"):
-addNounWords.append(tagged[count][0])
-count += 1
-print(addNounWords)
-temp = defaultdict(int)
-for sub in addNounWords:
-for wrd in sub.split():
-temp[wrd] += 1
-res = max(temp, key=temp.get)
-print("Noun Word with maximum frequency: " + str(res))
-
-
-Practical No. 2F:
-Aim: Map Words to Properties Using Python Dictionaries
-Code:
-thisdict = {
-"brand": "Ford",
-"model": "Mustang",
-"year": 1964
-}
-print(thisdict)
-print(thisdict["brand"])
-print(len(thisdict))
-print(type(thisdict))
-print(type(thisdict))
-
-Practical No. 2G:
-Aim: Study DefaultTagger, Regular expression tagger, UnigramTagger
-Code: DefaultTagger
-# DefaulTagger
-import nltk
-from nltk.tag import DefaultTagger
-from nltk.corpus import treebank
-exptagger = DefaultTagger('NN')
-testsentences = treebank.tagged_sents()[1000:]
-print(exptagger.accuracy(testsentences))
-exptagger2 = DefaultTagger('NN')
-print(exptagger2.tag_sents([['Hi', ','], ['How', 'are', 'you', '?']]))
-
-Code: RegexpTagger
-# Regular Expression Tagger
-from nltk.corpus import brown
-from nltk.tag import RegexpTagger
-test_sent = brown.sents(categories='news')[0]
-regexp_tagger = RegexpTagger(
-[(r'^-?[0-9]+(.[0-9]+)?$', 'CD'),
-(r'(The|the|A|a|An|an)$', 'AT'),
-(r'.*able$', 'JJ'),
-(r'.*ness$', 'NN'),
-(r'.*ly$', 'RB'),
-(r'.*s$', 'NNS'),
-(r'.*ing$', 'VBG'),
-(r'.*ed$', 'VBD'),
-(r'.*', 'NN')]
-)
-print(regexp_tagger)
-print(regexp_tagger.tag(test_sent))
-
-
-Code: UnigramTagger
-# UnigramTagger
-from nltk.tag import UnigramTagger
-from nltk.corpus import treebank
-train_sents = treebank.tagged_sents()[:10]
-tagger = UnigramTagger(train_sents)
-print(treebank.sents()[0])
-print('\n', tagger.tag(treebank.sents()[0]))
-tagger.tag(treebank.sents()[0])
-tagger = UnigramTagger(model = {'Pierre': 'NN'})
-print('\n', tagger.tag(treebank.sents()[0]))
-
-
-Practical No. 2H:
-Aim: Find different words from a given plain text without any space by 
-comparing this text with a given corpus of words. Also find the score of 
-words.
-Code: 
-from __future__ import with_statement
-import re
-words = []
-testword = []
-ans = []
-print("MENU")
-print("--------")
-print("1. Hash tag segmentation")
-print("2. URL segmentation")
-print("enter the input choice for performing word segmentation")
-choice = int(input())
-if choice == 1:
-text = "#whatismyname"
-print("input with HashTag ", text)
-pattern = re.compile("[^\w']")
-a = pattern.sub('', text)
-elif choice == 2:
-text = "www.whatismyname.com"
-print("input with URL ", text)
-a = re.split('\s|(?<!\d)[,.](?!\d)',text)
-splitwords = ["www", "com", "in"]
-a = "".join([each for each in a if each not in splitwords])
-else:
-print("wrong choice... try again")
-print(a)
-for each in a:
-testword.append(each)
-test_length = len(testword)
-with open('word.txt', 'r') as f:
-lines = f.readlines()
-words = [(e.strip()) for e in lines]
-def Seg(a, length):
-ans = []
-for k in range(0, length+1):
-if a[0:k] in words:
-print(a[0:k], "-appears in the corpus")
-ans.append(a[0:k])
-break
-if ans != []:
-g = max(ans, key=len)
-return g
-test_tot_itr = 0
-answer = []
-Score = 0
-N = 37
-M = 0
-C = 0
-while test_tot_itr < test_length:
-ans_words = Seg(a, test_length)
-if ans_words != 0:
-test_itr = len(ans_words)
-answer.append(ans_words)
-a = a[test_itr:test_length]
-test_tot_itr += test_itr
-Aft_Seg = "".join([each for each in answer])
-print("Output")
-print("-------------")
-print(Aft_Seg)
-C = len(answer)
-score = C*N/N
-print("Score", score)
-
-Practical No. 3A:
-Aim: Study of Wordnet Dictionary with methods as synsets, definitions, 
-examples, antonyms.
-Code: 
-import nltk
-nltk.download('wordnet')
-from nltk.corpus import wordnet
-print(wordnet.synsets("computer"))
-print(wordnet.synset("computer.n.01").definition())
-print("Examples: ", wordnet.synset("computer.n.01").examples())
-print(wordnet.lemma('buy.v.01.buy').antonyms())
-
-Practical No. 3B:
-Aim: Study lemmas, hyponyms, hypernyms, entailments.
-Code: 
-import nltk
-from nltk.corpus import wordnet
-print(wordnet.synsets("computer"))
-print(wordnet.synset("computer.n.01").lemma_names())
-for e in wordnet.synsets("computer"):
-print(f'{e} --> {e.lemma_names()}')
-print(wordnet.synset('computer.n.01').lemmas())
-print(wordnet.lemma('computer.n.01.computing_device').synset())
-print(wordnet.lemma('computer.n.01.computing_device').name())
-syn = wordnet.synset('computer.n.01')
-print(syn.hyponyms)
-print([lemma.name() for synset in syn.hyponyms() for lemma in
-synset.lemmas()])
-vehicle = wordnet.synset('vehicle.n.01')
-car = wordnet.synset('car.n.01')
-print(car.lowest_common_hypernyms(vehicle))
-
-Practical No. 3C:
-Aim: Write a program using python to find synonym and antonym of word 
-"active" using Wordnet
-Code: 
-from nltk.corpus import wordnet
-print("Synonyms of word 'active':")
-print(wordnet.synsets("active"))
-print("\n")
-print("Antonyms of word 'active':")
-print(wordnet.lemma('active.a.01.active').antonyms()
-
-Practical No. 3D:
-Aim: Compare two nouns
-Code: 
-import nltk
-from nltk.corpus import wordnet
-syn1 = wordnet.synsets('football')
-syn2 = wordnet.synsets('soccer')
-for s1 in syn1:
-for s2 in syn2:
-print("Path similarity of: ")
-print(s1, '(', s1.pos(), ')', '[', s1.definition(), ']')
-print(s2, '(', s2.pos(), ')', '[', s2.definition(), ']')
-print(" is ", s1.path_similarity(s2))
-print()
-
-Practical No. 3E:
-Aim: Handling stopword.
-i. Using nltk Adding or Removing Stop Words in NLTK's Default Stop Word 
-List
-ii. Using Gensim Adding and Removing Stop Words in Default Gensim Stop 
-Words List
-iii. Using Spacy Adding and Removing Stop Words in Default Spacy Stop Words 
-List
-Code: NLTK Adding or Removing Stop Words
-# nltk Adding or Removing Stop Words
-import nltk
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-text = "Yashesh likes to play football, however he is not too fond of tennis."
-text_tokens = word_tokenize(text)
-tokens_without_sw = [word for word in text_tokens if not word in
-stopwords.words()]
-print(tokens_without_sw)
-all_stopwords = stopwords.words('english')
-all_stopwords.append('play')
-text_tokens = word_tokenize(text)
-tokens_without_sw = [word for word in text_tokens if not word in
-all_stopwords]
-print(tokens_without_sw)
-all_stopwords.remove('not')
-text_tokens = word_tokenize(text)
-tokens_without_sw = [word for word in text_tokens if not word in
-all_stopwords]
-print(tokens_without_sw)
-
-
-Code: Gensim Adding or Removing Stop Words
-# Gensim Adding or Removing Stop Words
-import gensim
-from gensim.parsing.preprocessing import remove_stopwords
-from gensim.parsing.preprocessing import STOPWORDS
-from nltk.tokenize import word_tokenize
-text = "Yash likes to play football, however he is not fond of tennis."
-filtered_sentence = remove_stopwords(text)
-print(filtered_sentence)
-all_stopwords = STOPWORDS
-print(all_stopwords)
-all_stopwords_gensim = STOPWORDS.union(set(['likes', 'play']))
-text_tokens = word_tokenize(text)
-token_without_sw = [word for word in text_tokens if not word in
-all_stopwords_gensim]
-print(token_without_sw)
-sw_list = {"not"}
-all_stopwords_gensim = STOPWORDS.difference(sw_list)
-text_tokens = word_tokenize(text)
-token_without_sw = [word for word in text_tokens if not word in
-all_stopwords_gensim]
-print(token_without_sw)
-
-Code: Spacy Adding or Removing Stop Words
-# Spacy Adding or Removing Stop Words
-# pip install spacy
-# In cmd: py -m spacy download en_core_web_sm
-import spacy
-import nltk
-from nltk.tokenize import word_tokenize
-sp = spacy.load('en_core_web_sm')
-all_stopwords = sp.Defaults.stop_words
-all_stopwords.add("play")
-text = "Yash likes to play football, however he is not too fond of tennis."
-text_tokens = word_tokenize(text)
-tokens_without_sw = [word for word in text_tokens if not word in
-all_stopwords]
-print(tokens_without_sw)
-all_stopwords.remove("not")
-tokens_without_sw = [word for word in text_tokens if not word in
-all_stopwords]
-print(tokens_without_sw)
-
-
-Practical No. 6A:
-Aim: Part of speech Tagging and chunking of user defined text.
-Code: 
-import nltk
-from nltk import tokenize
-from nltk import chunk
-nltk.download('maxent_ne_chunker')
-nltk.download('words')
-para = input("Enter some text: ")
-sents = tokenize.sent_tokenize(para)
-print("\nSentence Tokenization:\n==============================")
-print(sents)
-print("\nWord Tokenization:\n==============================")
-for index in range(len(sents)):
-words = tokenize.word_tokenize(sents[index])
-print(words)
-tagged_words = []
-for index in range(len(sents)):
-tagged_words.append(nltk.pos_tag(words))
-print("\nPOS Tagging:\n==============================\n", tagged_words)
-tree = []
-for index in range(len(sents)):
-tree.append(chunk.ne_chunk(tagged_words[index]))
-print("\nChunking:\n==============================")
-print(tree)
-
-
-Practical No. 6B:
-Aim: Named Entity recognition of user defined text.
-Code: 
-# In cmd: py -m spacy download en_core_web_sm
-import spacy
-nlp = spacy.load("en_core_web_sm")
-text = ("When Sebastian Thrun started working on self-driving cars at "
-"Google in 2007, few people outside of the company took him "
-"seriously. “I can tell you very senior CEOs of major American "
-"car companies would shake my hand and turn away because I wasn’t "
-"worth talking to,” said Thrun, in an interview with Recode earlier "
-"this week")
-doc = nlp(text)
-print("Noun phrases: ", [chunk.text for chunk in doc.noun_chunks])
-print("Verbs: ", [token.lemma_ for token in doc if token.pos_ == "VERB"])
-
-
-Practical No. 6C:
-Aim: Named Entity recognition with diagram using NLTK corpus –
-treebank.
-Code: 
-import nltk
-nltk.download('treebank')
-from nltk.corpus import treebank_chunk
-treebank_chunk.tagged_sents()[0]
-treebank_chunk.chunked_sents()[0]
-treebank_chunk.chunked_sents()[0].draw()
-
-
-Practical No. 7A:
-Aim: Define grammer using nltk. Analyze a sentence using the same.
-Code: 
-import nltk
-from nltk import tokenize
-grammar1 = nltk.CFG.fromstring("""
-S -> VP
-VP -> VP NP
-NP -> Det NP
-Det -> 'that'
-NP -> singular Noun
-NP -> 'flight'
-VP -> 'Book'
-""")
-sentence = "Book that flight"
-for index in range(len(sentence)):
-all_tokens = tokenize.word_tokenize(sentence)
-print(all_tokens)
-parser = nltk.ChartParser(grammar1)
-for tree in parser.parse(all_tokens):
-print(tree)
-tree.draw()
-
-Practical No. 7B:
-Aim: Accept the input string with Regular expression of FA: 101+
-Code: 
-def FA(s):
-if len(s) < 3:
-return "Rejected"
-if s[0] == '1':
-if s[1] == '0':
-if s[2] == '1':
-for i in range(3, len(s)):
-if s[i] != '1':
-return "Rejected"
-return "Accepted"
-return "Rejected"
-return "Rejected"
-return "Rejected"
-inputs = ['1', '10101', '101', '10111', '01010', '100', '', '10111101', 
-'1011111']
-for i in inputs:
-print(FA(i))
-
-
-Practical No. 7C:
-Aim: Accept the input string with Regular expression of FA: (a+b)*bba
-Code: 
-def FA(s):
-size = 0
-for i in s:
-if i == 'a' or i == 'b':
-size += 1
-else:
-return "Rejected"
-if size >= 3:
-if s[size-3] == 'b':
-if s[size-2] == 'b':
-if s[size-1] == 'a':
-return "Accepted"
-return "Rejected"
-return "Rejected"
-return "Rejected"
-return "Rejected"
-inputs = ['bba', 'ababbba', 'abba', 'abb', 'baba', 'bbb', '']
-for i in inputs:
-print(FA(i))
-
-
-Practical No. 7D:
-Aim: Implementation of Deductive Chart Parsing using context free 
-grammar and a given sentence.
-Code: 
-import nltk
-from nltk import tokenize
-grammar1 = nltk.CFG.fromstring("""
-S -> NP VP
-PP -> P NP
-NP -> Det N | Det N PP | 'I'
-VP -> V NP | VP PP
-Det -> 'a' | 'my'
-N -> 'bird' | 'balcony'
-V -> 'saw'
-P -> 'in'
-""")
-sentence = "I saw a bird in my balcony"
-for index in range(len(sentence)):
-all_tokens = tokenize.word_tokenize(sentence)
-print(all_tokens)
-parser = nltk.ChartParser(grammar1)
-for tree in parser.parse(all_tokens):
-print(tree)
-tree.draw()
-
-
-Practical No. 8A:
-Aim: Study PorterStemmer, LancasterStemmer, RegexpStemmer, 
-SnowballStemmer, WordNetLemmatizer
-Code: 
-# PorterStemmer
-from nltk.stem import PorterStemmer
-word_stemmer = PorterStemmer()
-print("PorterSemmer: ", word_stemmer.stem('writing'))
-# LancesterStemmer
-import nltk
-from nltk.stem import LancasterStemmer
-Lanc_stemmer = LancasterStemmer()
-print("\nLancesterStemmer", Lanc_stemmer.stem('writing'))
-# RegexpStemmer
-import nltk
-from nltk.stem import RegexpStemmer
-Reg_stemmer = RegexpStemmer('ing$|s$|e$|able$', min=4)
-print("\nRegexpStemmer", Reg_stemmer.stem('writing'))
-# SnowballStemmer
-import nltk
-from nltk.stem import SnowballStemmer
-english_stemmer = SnowballStemmer('english')
-print("\nSnowballStemmer", english_stemmer.stem('writing'))
-# WordNetLemmatizer
-from nltk.stem import WordNetLemmatizer
-lemmatizer = WordNetLemmatizer()
-print("\nWordNetLemmatizer:")
-print("word: \tlemma")
-print("rocks: ", lemmatizer.lemmatize("rocks"))
-print("corpora: ", lemmatizer.lemmatize("corpora"))
-print("better: ", lemmatizer.lemmatize("better", pos="a"))
-
-Practical No. 9A:
-Aim: Implement Naive Bayes classifier
-Code: 
-# pip install scikit-learn
-import pandas as pd
-import numpy as np
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import classification_report, confusion_matrix, 
-accuracy_score
-sms_data = pd.read_csv("spam.csv", encoding='latin-1')
-stemming = PorterStemmer()
-corpus = []
-for i in range(0, len(sms_data)):
-s1 = re.sub('[^a-zA-Z]', repl='', string=sms_data['v2'][i])
-s1.lower()
-s1 = s1.split()
-s1 = [stemming.stem(word) for word in s1 if word not in
-set(stopwords.words('english'))]
-s1 = ''.join(s1)
-corpus.append(s1)
-vectorizer = CountVectorizer()
-x = vectorizer.fit_transform(corpus).toarray()
+#Practical 1
+#Performing matrix multiplication and finding eigen vectors and eigen values using TensorFlow.
+import tensorflow as tf
+import warnings
+warnings.filterwarnings('ignore')
+print("Matrix Multiplication Demo")
+x = tf.constant([1, 2, 3, 4, 5, 6], shape=[2, 3])
 print(x)
-y = sms_data['v1'].values
+y = tf.constant([7, 8, 9, 10, 11, 12], shape=[3, 2])
 print(y)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, 
-stratify=y, random_state=2)
-multinomialnb = MultinomialNB()
-multinomialnb.fit(x_train, y_train)
-y_pred = multinomialnb.predict(x_test)
-print(y_pred)
-print(classification_report(y_test, y_pred))
-print("Accuracy Score: ", accuracy_score(y_test, y_pred))
+z = tf.matmul(x, y)
+print("Product: ", z)
+e_matrix_A = tf.random.uniform([2, 2], minval=3, maxval=10, dtype=tf.float32,
+name="matrixA")
+print("Matrix A: \n{}\n\n".format(e_matrix_A))
+eigen_values_A, eigen_vectors_A = tf.linalg.eigh(e_matrix_A)
+print("Eigen Vectors: \n{}\n\n Eigen Values:\n{}\n".format(eigen_vectors_A,
+eigen_values_A))
 
-Practical No. 10A:
-Aim: Speech Tagging:
- i. Speech tagging using spacy
- ii. Speech tagging using NLTK
-Code: Speech Tagging Using Spacy
-import spacy
-import spacy.attrs
-from spacy import displacy
-sp = spacy.load('en_core_web_sm')
-sen = sp(u"I like to play football. I hated it in my childhood though")
-print(sen.text)
-print(sen[7].pos_)
-print(sen[7].tag_)
-print(spacy.explain(sen[7].tag_))
-for word in sen:
-print(f'{word.text:{12}} {word.pos_:{10}} {word.tag_:{8}}
-{spacy.explain(word.tag_)}')
-sen = sp(u'Can you google it?')
-word = sen[2]
-print(f'{word.text:{12}} {word.pos_:{10}} {word.tag_:{8}}
-{spacy.explain(word.tag_)}')
-sen = sp(u'Can you search it on google?')
-word = sen[5]
-print(f'{word.text:{12}} {word.pos_:{10}} {word.tag_:{8}}
-{spacy.explain(word.tag_)}')
-sen = sp(u'I like to play football. I hated it in my childhood though')
-num_pos = sen.count_by(spacy.attrs.POS)
-num_pos
-for k, v in sorted(num_pos.items()):
-print(f'{k}. {sen.vocab[k].text:{8}}: {v}')
-sen = sp(u"I like to play football. I hated it in my childhood though")
-displacy.serve(sen, style='dep', options={'distance': 120})
-
-
-Code: Speech Tagging Using NLTK
-import nltk
-nltk.download('state_union')
-from nltk.corpus import state_union
-from nltk.tokenize import PunktSentenceTokenizer
-train_text = state_union.raw("2005-GWBush.txt")
-sample_text = state_union.raw("2006-GWBush.txt")
-custom_sent_tokenizer = PunktSentenceTokenizer(train_text)
-tokenized = custom_sent_tokenizer.tokenize(sample_text)
-def process_content():
-try:
-for i in tokenized[:2]:
-words = nltk.word_tokenize(i)
-tagged = nltk.pos_tag(words)
-print(tagged)
-except Exception as e:
-print(str(e))
-process_content()
-
-
-Practical No. 10B:
-Aim: Statistical parsing:
-i. Usage of Give and Gave in the Penn Treebank sample
-ii. Probabilistic Parser
-Code: Usage of Give and Gave in the Penn Treebank sample
-import nltk
-import nltk.parse.viterbi
-import nltk.parse.pchart
-def give(t):
-return t.label() == 'VP' and len(t) > 2 and t[1].label() == 'NP'\
-and (t[2].label() == 'PP-DTV' or t[2].label() == 'NP')\
-and ('give' in t[0].leaves() or 'gave' in t[0].leaves())
-def sent(t):
-return ''.join(token for token in t.leaves() if token[0] not in '*-0')
-def print_node(t, width):
-output = "%s %s: %s / %s: %s" %\
-(sent(t[0]), t[1].label(), sent(t[1]), t[2].label(), sent(t[2]))
-output = output[:width] + "..."
-print(output)
-for tree in nltk.corpus.treebank.parsed_sents():
-for t in tree.subtrees(give):
-print_node(t, 72)
-Code: Probabilistic Parser
-import nltk
-from nltk import PCFG
-grammar = PCFG.fromstring('''
-NP -> NNS [0.5] | JJ NNS [0.3] | NP CC NP [0.2]
-NNS -> "men" [0.1] | "women" [0.2] | "children" 
-[0.3] | NNS CC NNS [0.4]
-JJ -> "old" [0.4] | "young" [0.6]
-CC -> "and" [0.9] | "or" [0.1]
-''')
-print(grammar)
-viterbi_parser = nltk.ViterbiParser(grammar)
-token = "old men and women".split()
-obj = viterbi_parser.parse(token)
-print("Output: ")
-for x in obj:
-print(x)
-
-
-Practical No. 11A:
-Aim: Multiword Expressions in NLP
-Code:
-from nltk.tokenize import MWETokenizer
-from nltk import sent_tokenize, word_tokenize
-s = '''Good cake cost RS.1500\kg in Mumbai. Please buy me one of them. 
-\n\nThanks.'''
-mwe = MWETokenizer([('New', 'York'), ('Hong', 'Kong')], separator='_')
-for sent in sent_tokenize(s):
-print(mwe.tokenize(word_tokenize(sent)))
-
-
-Practical No. 11B:
-Aim: Normalized Web Distance and Word Similarity
-Code:
+#Practical 2
+#Solving XOR problem using deep feed forward network.
 import numpy as np
-import re
-import textdistance
-import sklearn
-from sklearn.cluster import AgglomerativeClustering
-texts = [
-'Reliance Supermarket', 'Reliance hypermarket', 'Reliance', 'Reliance', 
-'Reliance downtown', 'Reliance market',
-'Mumbai', 'Mumbai Hyper', 'Mumbai dxb', 'mumbai airport',
-'k.m trading', 'KM Trading', 'KM trade', 'K.M. Trading', 'KM.Trading'
-]
-def normalize(text):
-return re.sub('[^a-z0-9]+', '', text.lower())
-def group_texts(texts, threshold = 0.4):
-normalized_texts = np.array([normalize(text) for text in texts])
-distances = 1 - np.array([
-[textdistance.jaro_winkler(one, another) for one in normalized_texts] 
-for another in normalized_texts
-])
-clustering = AgglomerativeClustering(
-distance_threshold=threshold, metric="precomputed", 
-linkage="complete", n_clusters=None
-).fit(distances)
-centers = dict()
-for cluster_id in set(clustering.labels_):
-index = clustering.labels_ == cluster_id
-centrality = distances[:, index][index].sum(axis=1)
-centers[cluster_id] = normalized_texts[index][centrality.argmin()]
-return [centers[i] for i in clustering.labels_]
-print(group_texts(texts))
+from keras.layers import Dense
+from keras.models import Sequential
+model = Sequential()
+model.add(Dense(units=2, activation='relu', input_dim = 2))
+model.add(Dense(units=1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam',
+metrics=['accuracy'])
+print(model.summary())
+print(model.get_weights())
+X = np.array([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+Y = np.array([0., 1., 1., 0.])
+model.fit(X, Y, epochs=1000, batch_size=4)
+print(model.get_weights())
+print(model.predict(X, batch_size=4))
 
 
-Practical No. 11C:
-Aim: Word Sense Disambiguation.
-Code:
-from nltk.corpus import wordnet as wn
-def get_first_sense(word, pos = None):
-if pos:
-synsets = wn.synsets(word, pos)
-else:
-synsets = wn.synsets(word)
-return synsets[0]
-best_synset = get_first_sense('bank')
-print('%s: %s' % (best_synset.name, best_synset.definition))
-best_synset = get_first_sense('set', 'n')
-print('%s: %s' % (best_synset.name, best_synset.definition))
-best_synset = get_first_sense('set', 'v')
-print('%s: %s' % (best_synset.name, best_synset.definition))
+#Practical 3
+#Implementing deep neural network for performing binary classification task.
 
+import pandas as pd
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Load the dataset using pandas to handle the header
+dataset = pd.read_csv('/content/diabetes.csv')
+
+# Split the dataset into input (X) and output (Y)
+X = dataset.iloc[:, 0:8].values
+Y = dataset.iloc[:, 8].values
+
+# Define the Sequential model
+model = Sequential()
+model.add(Dense(12, input_dim=8, activation='relu'))
+model.add(Dense(8, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+
+# Compile the model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# Train the model
+model.fit(X, Y, epochs=150, batch_size=10)
+
+# Evaluate the model
+_, accuracy = model.evaluate(X, Y)
+print('Accuracy of the model is:', accuracy * 100)
+
+# Make predictions
+predictions = model.predict(X)
+
+# Display predictions for the first 5 instances
+for i in range(5):
+    print(f'Input: {X[i].tolist()}, Predicted: {predictions[i][0]}, Actual: {Y[i]}')
+
+#Practical No. 4A:
+#Using deep feed forward network with two layers for performing multiclass classification and predicting the class.
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.datasets import make_blobs
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+X, Y = make_blobs(n_samples=100, centers=2, n_features=2, random_state=1)
+scalar = MinMaxScaler()
+scalar.fit(X)
+X = scalar.transform(X)
+model = Sequential()
+model.add(Dense(4, input_dim = 2, activation='relu'))
+model.add(Dense(4, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam')
+model.fit(X, Y, epochs=500)
+Xnew, Yreal = make_blobs(n_samples=3, centers=2, n_features=2, random_state=1)
+Xnew = scalar.transform(Xnew)
+Ynew = model.predict(Xnew)
+Ynew = np.round(Ynew)
+for i in range(len(Xnew)):
+  print("X = %s, Predicted = %s, Desired = %s" %(Xnew[i],Ynew[i],Yreal[i]))
+
+#Practical 4B
+#Using a deep feed forward network with two hidden layers for performing classification and predicting the probability of class.
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.datasets import make_blobs
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+X, Y = make_blobs(n_samples=100, centers=2, n_features=2, random_state=1)
+scalar = MinMaxScaler()
+scalar.fit(X)
+X = scalar.transform(X)
+model = Sequential()
+model.add(Dense(4, input_dim = 2, activation='relu'))
+model.add(Dense(4, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam')
+model.fit(X, Y, epochs=500)
+Xnew, Yreal = make_blobs(n_samples=3, centers=2, n_features=2, random_state=1)
+Xnew = scalar.transform(Xnew)
+Yclass = model.predict(Xnew)
+Yclass = np.round(Yclass)
+Ynew = model.predict(Xnew)
+for i in range(len(Xnew)):
+  print("X = %s, Predicted_probability = %s, Predicted_class = %s"
+%(Xnew[i], Ynew[i], Yclass[i]))
+
+
+#Practical 4C
+#Using deep feed forward network with the hidden layers for performing linear regression and predicting values.
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.datasets import make_regression
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+X, Y = make_regression(n_samples=100, n_features=2, noise=0.1, random_state=1)
+scalarX, scalarY = MinMaxScaler(), MinMaxScaler()
+scalarX.fit(X)
+scalarY.fit(Y.reshape(100, 1))
+X = scalarX.transform(X)
+Y = scalarY.transform(Y.reshape(100, 1))
+model = Sequential()
+model.add(Dense(4, input_dim=2, activation='relu'))
+model.add(Dense(4, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='mse', optimizer='adam')
+model.fit(X, Y, epochs=1000, verbose=0)
+Xnew, a = make_regression(n_samples=3, n_features=2, noise=0.1,
+random_state=1)
+Xnew = scalarX.transform(Xnew)
+Ynew = model.predict(Xnew)
+for i in range(len(Xnew)):
+  print("X = %s, Predicted = %s" %(Xnew[i], Ynew[i]))
+
+
+#5A
+# Evaluating feed forward deep network for regression using KFold cross validation.
+import pandas as pd
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from scikeras.wrappers import KerasRegressor
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+# Load the dataset
+dataframe = pd.read_csv('/content/housing (1).csv')
+
+# Inspect the data to identify non-numeric columns
+print(dataframe.dtypes)
+
+# Handle non-numeric columns
+# For example, dropping any non-numeric columns that are irrelevant
+# If there are columns like addresses, drop them
+dataframe = dataframe.select_dtypes(include=['number'])  # Keeping only numeric columns
+
+# Ensure there are no missing values
+dataframe.fillna(dataframe.mean(), inplace=True)
+
+X = dataframe.iloc[:, :-1].values
+Y = dataframe.iloc[:, -1].values
+
+# Define the wider model
+def wider_model():
+    model = Sequential()
+    model.add(Dense(15, input_dim=X.shape[1], kernel_initializer='normal', activation='relu'))
+    model.add(Dense(13, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(1, kernel_initializer='normal'))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
+
+# Create a pipeline with standardization and the Keras model
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasRegressor(build_fn=wider_model, epochs=100, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+
+# Evaluate the model using k-fold cross-validation
+kfold = KFold(n_splits=10)
+results = cross_val_score(pipeline, X, Y, cv=kfold)
+
+# Print the results
+print("Wider: %.2f (%.2f) MSE" % (results.mean(), results.std()))
+
+
+#Practical 5B
+#Evaluating feed forward deep network for multiclass Classification using KFold cross validaton
+import pandas as pd
+from keras.models import Sequential
+from keras.layers import Dense
+from scikeras.wrappers import KerasClassifier
+from keras import utils
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.preprocessing import LabelEncoder
+
+# Load the dataset, specifying that the first row contains headers
+df = pd.read_csv('/content/flowers.csv')
+
+# Inspect the first few rows to ensure correct data loading
+print(df.head())
+
+# Drop any non-numeric columns that might be present (e.g., headers)
+# Assuming columns 0:4 are the features and column 4 is the target
+X = df.iloc[:, 0:4].astype(float)  # Convert feature columns to float
+Y = df.iloc[:, 4]  # Target variable
+
+# Encode the target variable
+encoder = LabelEncoder()
+encoder.fit(Y)
+encoded_Y = encoder.transform(Y)
+print(encoded_Y)
+
+# Convert encoded labels to categorical (one-hot encoding)
+dummy_Y = utils.to_categorical(encoded_Y)
+print(dummy_Y)
+
+# Define the model
+def baseline_model():
+    model = Sequential()
+    model.add(Dense(8, input_dim=4, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+# Initialize and fit the model
+estimator = baseline_model()
+estimator.fit(X, dummy_Y, epochs=100, shuffle=True, verbose=0)
+
+# Make predictions
+action = estimator.predict(X)
+
+# Print the first 25 actual and predicted values
+for i in range(25):
+    print("Actual:", dummy_Y[i])
+    print("Predicted:", action[i])
+    print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+
+
+#Practical 6A
+#Implementing regularization to avoid overfitting in binary classification.
+from matplotlib import pyplot as plt
+from sklearn.datasets import make_moons
+from keras.models import Sequential
+from keras.layers import Dense
+X, Y = make_moons(n_samples=100, noise=0.2, random_state=1)
+n_train = 30
+trainX, testX = X[:n_train,:], X[n_train:]
+trainY, testY = Y[:n_train], Y[n_train:]
+model = Sequential()
+model.add(Dense(500, input_dim=2, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam',
+metrics=['accuracy'])
+history = model.fit(trainX, trainY, validation_data=(testX, testY),
+epochs=4000)
+plt.plot(history.history['accuracy'], label='train')
+plt.plot(history.history['val_accuracy'], label='test')
+plt.legend()
+plt.show()
+
+
+
+#Practical 7
+#Demonstrate recurrent neural network that learns to perform sequence analysis for stock price.
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from keras.models import Sequential
+from keras.layers import Dense, LSTM, Dropout
+from sklearn.preprocessing import MinMaxScaler
+dataset_train = pd.read_csv('/content/Google_Stock_Price_Train.csv')
+training_set = dataset_train.iloc[:,1:2].values
+sc = MinMaxScaler(feature_range=(0,1))
+training_set_scaled = sc.fit_transform(training_set)
+X_train = []
+Y_train = []
+for i in range(60, 1258):
+  X_train.append(training_set_scaled[i-60:i,0])
+  Y_train.append(training_set_scaled[i,0])
+X_train, Y_train = np.array(X_train), np.array(Y_train)
+print(X_train)
+print("**************************************")
+print(Y_train)
+print("**************************************")
+X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+print("**************************************")
+print(X_train)
+regressor = Sequential()
+regressor.add(LSTM(units=50, return_sequences=True, 
+input_shape=(X_train.shape[1], 1)))
+regressor.add(Dropout(0.2))
+regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(Dropout(0.2))
+regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(Dropout(0.2))
+regressor.add(LSTM(units=50))
+regressor.add(Dropout(0.2))
+regressor.add(Dense(units=1))
+regressor.compile(optimizer='adam', loss='mean_squared_error')
+regressor.fit(X_train, Y_train, epochs=100, batch_size=32)
+dataset_test = pd.read_csv('/content/Google_Stock_Price_Test.csv')
+real_stock_price = dataset_test.iloc[:,1:2].values
+dataset_total = pd.concat((dataset_train['Open'], dataset_test['Open']), 
+axis=0)
+inputs = dataset_total[len(dataset_total)-len(dataset_test)-60:].values
+inputs = inputs.reshape(-1,1)
+inputs = sc.transform(inputs)
+X_test = []
+for i in range(60, 80):
+  X_test.append(inputs[i-60:i,0])
+X_test = np.array(X_test)
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+predicted_stock_price = regressor.predict(X_test)
+predicted_stock_price = sc.inverse_transform(predicted_stock_price)
+plt.plot(real_stock_price, color='red', label='real google stock price')
+plt.plot(predicted_stock_price, color='blue', label='predicted stock price')
+plt.xlabel('time')
+plt.ylabel('google stock price')
+plt.legend()
+plt.show()
+
+
+#Practical 8
+#Performing encoding and decoding of images using deep autoencoder.
+import keras
+from keras import layers
+from keras.datasets import mnist
+import numpy as np
+import matplotlib.pyplot as plt
+encoding_dim = 32
+input_img = keras.Input(shape=(784,))
+encoded = layers.Dense(encoding_dim, activation='relu')(input_img)
+decoded = layers.Dense(784, activation='sigmoid')(encoded)
+autoencoder = keras.Model(input_img, decoded)
+encoder = keras.Model(input_img, encoded)
+encoded_input = keras.Input(shape=(encoding_dim,))
+decoder_layer = autoencoder.layers[-1]
+decoder = keras.Model(encoded_input, decoder_layer(encoded_input))
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+(X_train,_),(X_test,_) = mnist.load_data()
+X_train = X_train.astype('float32')/255
+X_test = X_test.astype('float32')/255
+X_train = X_train.reshape((len(X_train), np.prod(X_train.shape[1:])))
+X_test = X_test.reshape((len(X_test), np.prod(X_test.shape[1:])))
+print(X_train.shape)
+print(X_test.shape)
+autoencoder.fit(X_train, X_train, epochs=50, batch_size=256, shuffle=True, 
+validation_data=(X_test, X_test))
+encoded_imgs = encoder.predict(X_test)
+decoded_imgs = decoder.predict(encoded_imgs)
+n = 10
+plt.figure(figsize=(40, 4))
+for i in range(10):
+  ax = plt.subplot(3, 20, i + 1)
+  plt.imshow(X_test[i].reshape(28, 28))
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+  ax = plt.subplot(3, 20, i + 1 + 20)
+  plt.imshow(encoded_imgs[i].reshape(8, 4))
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+  ax = plt.subplot(3, 20, 2 * 20 + i + 1)
+  plt.imshow(decoded_imgs[i].reshape(28, 28))
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+plt.show()
+
+#Practical 9
+#Implementation of convolutional neural network to predict numbers from number images.
+from keras.datasets import mnist
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, Flatten
+import matplotlib.pyplot as plt
+(X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+plt.imshow(X_train[0])
+plt.show()
+print(X_train[0].shape)
+X_train = X_train.reshape(60000, 28, 28, 1)
+X_test = X_test.reshape(10000, 28, 28, 1)
+Y_train = to_categorical(Y_train)
+Y_test = to_categorical(Y_test)
+Y_train[0]
+print(Y_train[0])
+model = Sequential()
+model.add(Conv2D(64, kernel_size=3, activation='relu', input_shape = (28, 28, 1)))
+model.add(Conv2D(32, kernel_size=3, activation='relu'))
+model.add(Flatten())
+model.add(Dense(10, activation='softmax'))
+model.compile(optimizer='adam', loss='categorical_crossentropy', 
+metrics=['accuracy'])
+model.fit(X_train, Y_train, validation_data=(X_test, Y_test), epochs=3)
+print(model.predict(X_test[:4]))
+print(Y_test[:4])
+
+
+#Practical 10
+#Denoising of images using autoencoder.
+import keras
+from keras.datasets import mnist
+from keras import layers
+import numpy as np
+from keras.callbacks import TensorBoard
+import matplotlib.pyplot as plt
+(X_train,_), (X_test,_) = mnist.load_data()
+X_train = X_train.astype('float32')/255
+X_test = X_test.astype('float32')/255
+X_train = np.reshape(X_train, (len(X_train), 28, 28, 1))
+X_test = np.reshape(X_test, (len(X_test), 28, 28, 1))
+noise_factor = 0.5
+X_train_noisy = X_train + noise_factor * np.random.normal(loc=0.0, scale=1.0, 
+size=X_train.shape)
+X_test_noisy = X_test + noise_factor * np.random.normal(loc=0.0, scale=1.0, 
+size=X_test.shape)
+X_train_noisy = np.clip(X_train_noisy, 0., 10)
+X_test_noisy = np.clip(X_test_noisy, 0., 1.)
+n = 10
+plt.figure(figsize=(20, 2))
+for i in range(1, n + 1):
+  ax = plt.subplot(1, n, i)
+  plt.imshow(X_test_noisy[i].reshape(28, 28))
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+plt.show()
+input_img = keras.Input(shape=(28, 28, 1))
+x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(input_img)
+x = layers.MaxPooling2D((2, 2), padding='same')(x)
+x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+encoded = layers.MaxPool2D((2, 2), padding='same')(x)
+x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(encoded)
+x = layers.UpSampling2D((2, 2))(x)
+x = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+x = layers.UpSampling2D((2, 2))(x)
+decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+autoencoder = keras.Model(input_img, decoded)
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+autoencoder.fit(X_train_noisy, X_train, epochs=3, batch_size=128, 
+shuffle=True,validation_data=(X_test_noisy, X_test), 
+callbacks=[TensorBoard(log_dir='/tmo/tb', histogram_freq=0, 
+write_graph=False)])
+predictions = autoencoder.predict(X_test_noisy)
+m = 10
+plt.figure(figsize=(20, 2))
+for i in range(1, m + 1):
+  ax = plt.subplot(1, m, i)
+  plt.imshow(predictions[i].reshape(28, 28))
+  plt.gray()
+  ax.get_xaxis().set_visible(False)
+  ax.get_yaxis().set_visible(False)
+plt.show()
